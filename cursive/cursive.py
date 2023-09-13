@@ -2,6 +2,7 @@ import atexit
 import asyncio
 import inspect
 import json
+from textwrap import dedent
 from time import time, sleep
 from typing import Any, Callable, Generic, Optional, TypeVar
 from os import environ as env
@@ -260,9 +261,9 @@ def resolve_options(
     resolved_system_message = ""
 
     if vendor in ["anthropic", "cohere", "replicate"] and len(functions) > 0:
-        resolved_system_message = (
-            (system_message or "") + "\n\n" + get_function_call_directives(functions)
-        )
+        system_prompt = dedent(system_message) if system_message else ""
+        fn_directives = get_function_call_directives(functions)
+        resolved_system_message = "\n\n".join((system_prompt, fn_directives))
 
     query_messages: list[CompletionMessage] = [
         message
@@ -270,7 +271,7 @@ def resolve_options(
             resolved_system_message
             and CompletionMessage(role="system", content=resolved_system_message),
             *messages,
-            prompt and CompletionMessage(role="user", content=prompt),
+            prompt and CompletionMessage(role="user", content=dedent(prompt)),
         ]
         if message
     ]
